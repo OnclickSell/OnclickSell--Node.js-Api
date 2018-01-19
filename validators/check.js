@@ -1,80 +1,84 @@
 
 
 
-const rules = require('./rules');
-const messages = require('./messages');
-const validRules = {};
-const NewRules = [];
-let onlyFields = [];
-let test1 = {};
-let test2 = [];
-let test3;
-let test4;
+const { rules_list } = require('./rules');
+const { RulesFunctions } = require('./rules');
+const { messages } = require('./rules');
+let error_messages = [];
+let reject = false
+let err = ''
 
 
-exports.check = (data, rules, callback) => {
-    rules.forEach(item => {
-        NewRules.push(FieldParser(item))
-        validate(onlyFields, NewRules);
-        // console.log(onlyFields)
-    });
-return callback(' ')
- return callback(NewRules);
-
-}
-
-
-const validate = (fields_name, all_rules) => {
-    for(let i = 0; i < fields_name.length; i++) {
-        if (rules.RuleExist(all_rules[i][fields_name[i]])) {
-            rules.ApplyRules(all_rules[i][fields_name[i]])
-        } else {
-            console.log('failed')
-        }
-    }
-}
-
-
-
-
-
-
-const FieldParser = (rule) => {
-    let ExtractedField;
-    let ExtractedRules;
-    let Combined = {};
-    ExtractedField = rule.match(/\<([^)]+)\>/)[1];
-    onlyFields.push(ExtractedField);
-    ExtractedRules = rule.replace(/\<([^)]+)\>/, '').trim();
-    ExtractedRules = ExtractedRules.split('|');
-    Combined[ExtractedField] = trimRules(ExtractedRules);
-    return Combined;
-
-    function trimRules(rules) {
+exports.check = (request, rules, callback) => {
+    return new Promise((resolve, reject) => {
         for(let i = 0; i < rules.length; i++) {
-            if (rules[i].length === 0 || rules[i] === null) {
-                rules.splice(i, 1)
+
+            rules_exists(rules[i].rules)
+            .then(result => {
+    
+                validate (request, rules[i].field, rules[i].rules).then(value => {
+                    return (error_messages.length > 0 ? reject(error_messages) : resolve('passed'))
+                })
+    
+            }).catch(error => {
+                reject(error)
+                throw error
+            })
+        }
+    })
+}
+
+
+
+
+
+const rules_exists = (rules) => {
+    return new Promise((resolve, reject) => {
+
+        let ExtractedRules = [...rules.split('|')];
+    
+        for(let i = 0; i < ExtractedRules.length; i++) {
+            if(rules_list.indexOf(ExtractedRules[i].split(':')[0]) === -1) {
+                reject('The ' + ExtractedRules[i] + ' doesn\'t exist')
             }
         }
-        return rules
-    }
-}
+        
+        resolve('success')
 
-
-const RuleParser = (rules) => {
-    let fields = rules.split('->');
-    let AllRules = []
-    
-    SingleRules.forEach(rule => {
-        AllRules.push({ rule: rule.split(':')[0], value: rule.split(':')[1]})
     })
 
-    AllRules.forEach(rule => {
-        validationRules.forEach(validationRule => {
-            if (validationRule.name === rule.rule) {
-                validationRule.rule(field_name, input, rule);
-            }
-        })
-    }) 
 }
+
+
+
+
+const validate = (data, field_name, rules) => {
+    return new Promise((resolve, reject) => {
+
+        let ExtractedRules = [...rules.split('|')];
+
+        for(let i = 0; i < ExtractedRules.length; i++) {
+
+            if(!RulesFunctions[ExtractedRules[i].split(':')[0]](data[field_name], ExtractedRules[i].split(':')[1])) {
+                add_message(field_name, ExtractedRules[i])
+                resolve(error_messages)
+            } else {
+                resolve(error_messages)
+            }
+            
+        }
+    })
+    
+}
+
+const add_message = (field_name, rule) => {
+    let each_message = {}
+    error_messages.push(
+        each_message[field_name] = messages[rule.split(':')[0]](field_name, rule.split(':')[1])
+    )
+}
+
+
+
+
 

@@ -7,15 +7,18 @@ var ExpressBrute = require('express-brute');
 var store = new ExpressBrute.MemoryStore(); // stores state locally, don't use this in production
 var bruteforce = new ExpressBrute(store, {
     freeRetries: 5,
-	attachResetToRequest: false,
-	refreshTimeoutOnRequest: false,
+	attachResetToRequest: true,
+	refreshTimeoutOnRequest: true,
 	minWait: 25*60*60*1000, // 1 day 1 hour (should never reach this wait time)
 	maxWait: 25*60*60*1000, // 1 day 1 hour (should never reach this wait time)
 	lifetime: 24*60*60, // 1 day (seconds not milliseconds)
 });
 
+
+
 router.post('/signIn', bruteforce.prevent, authController.signIn);
 router.post('/signUp', authController.signUp);
+router.post('/signUp/email_check', authController.emailCheck);
 
 
 module.exports = router;

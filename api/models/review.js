@@ -13,8 +13,10 @@ const bcrypt = require('bcrypt');
 |
 */
 
-exports.get_all_users = (callback) => {
-    db.select("*").from("users").asCallback((err, value) => callback(err, value));       
+exports.get_all_reviews = (req, callback) => {
+    db.select("*").from("review").where('list_id', req.body.id)
+    .then(result => callback('', result))
+    .catch(err => callback(err))
 }
 
 /*
@@ -28,8 +30,13 @@ exports.get_all_users = (callback) => {
 |
 */
 
-exports.get_single_user = (id, callback) => {
-    db.select('*').from('users').where({ id: id }).asCallback((err, value) => callback(err, value));       
+exports.get_single_review = (req, callback) => {
+    db.select("*").from("review").where({
+        id: req.body.id,
+        list_id: req.body.list_id
+    })
+    .then(result => callback('', result))
+    .catch(err => callback(err, ''))       
 }
 
 
@@ -44,12 +51,12 @@ exports.get_single_user = (id, callback) => {
 |
 */
 
-exports.update_single_user = (id, data, callback) => {
+exports.update_single_review = (req, callback) => {
     db.update({
-        description: data.description,
-        age: data.age,
-        profile_picture: data.profile_picture
-    }).from('users').where({ id: id }).asCallback((err, value) => callback(err, value));       
+        review: req.body.review,
+    }).from('users').where({ id: req.body.id })
+    .then(result => callback('', result))
+    .catch(err => callback(err, ''))    
 }
 
 /*
